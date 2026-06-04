@@ -1,89 +1,60 @@
 
 local spawnedObjects = {}
-
 local imageDisplayed = false
 
 RegisterNetEvent('pl_printer:notification')
-AddEventHandler('pl_printer:notification', function(message, type)
-
-    if Config.Notify == 'ox' then
-        TriggerEvent('ox_lib:notify', {description = message, type = type or "success"})
-    elseif Config.Notify == 'esx' then
-        Notification(message)
-    elseif Config.Notify == 'okok' then
-        TriggerEvent('okokNotify:Alert', message, 6000, type)
-    elseif Config.Notify == 'qb' then
-        Notification(message, type)
-    elseif Config.Notify == 'wasabi' then
-        exports.wasabi_notify:notify('Printer', message, 6000, type, false, 'fas fa-ghost')
-    elseif Config.Notify == 'custom' then
-        -- Add your custom notifications here
-    end
+AddEventHandler('pl_printer:notification', function(message, ntype)
+    exports.pl_lib:Notify('Printer', message, ntype or 'success')
 end)
 
 function disableControls()
-    SetEntityInvincible(PlayerPedId(), true) 
+    SetEntityInvincible(PlayerPedId(), true)
     FreezeEntityPosition(PlayerPedId(), true)
 end
 
 function enableControls()
-    SetEntityInvincible(PlayerPedId(), false) 
+    SetEntityInvincible(PlayerPedId(), false)
     FreezeEntityPosition(PlayerPedId(), false)
 end
 
-RegisterNetEvent("pl_printer:showImageQB")
-AddEventHandler("pl_printer:showImageQB", function(imageName)
-    TriggerServerEvent('pl_printer:fetchImageLink',imageName)
-end)
-
-RegisterNetEvent("pl_printer:showImage")
-AddEventHandler("pl_printer:showImage", function(imageName)
+RegisterNetEvent('pl_printer:showImage')
+AddEventHandler('pl_printer:showImage', function(imageName)
     if not imageDisplayed then
         imageDisplayed = true
-        SetNuiFocus(true, true) 
+        SetNuiFocus(true, true)
         SendNUIMessage({
-            action = "show",
+            action   = 'show',
             imageUrl = imageName
         })
         disableControls()
     end
-end) 
+end)
 
 RegisterNUICallback('hideFrame', function(data, cb)
     imageDisplayed = false
     SetNuiFocus(false, false)
     enableControls()
+    cb({})
 end)
 
-function showInputDialog(title, options, submitText)
-    if Config.InputDialog == 'ox_lib' then
-        return lib.inputDialog(title, options)
-    elseif Config.InputDialog == 'lation_ui' then
-        return exports.lation_ui:input({
-            title = title,
-            submitText = submitText,
-            options = options
-        })
-    end
-end
-
-RegisterNetEvent("pl_printer:openprinter", function()
-    local input = showInputDialog(Locale("print_menu"), {
+-- Local event only — triggered by target interaction, not via network
+AddEventHandler('pl_printer:openprinter', function()
+    local input = exports.pl_lib:ShowInputDialog(Locale('print_menu'), {
         {
-            type = 'input',
-            label = Locale("image_link"),
-            description = Locale("image_url"),
-            required = true
+            type        = 'input',
+            label       = Locale('image_link'),
+            description = Locale('image_url'),
+            required    = true,
         },
         {
-            type = 'number',
-            label = Locale("copies"),
-            description = Locale("enter_copies"),
-            required = true,
+            type        = 'number',
+            label       = Locale('copies'),
+            description = Locale('enter_copies'),
+            required    = true,
             placeholder = '1',
-            icon = 'hashtag'
-        }
-    }, Locale("submit"))
+            icon        = 'hashtag',
+        },
+    }, Locale('submit'))
 
     if not input then
         _debug('[DEBUG] No input received')
@@ -101,40 +72,21 @@ end)
 
 
 for _, model in ipairs(Config.PrinterModel) do
-    if GetResourceState('qb-target') == 'started' then
-        exports['qb-target']:AddTargetModel(model, {
-            options = {
-                {
-                    icon = 'fa-solid fa-print',
-                    label = Locale("prints"),
-                    action = function(data)
-                        TriggerEvent('pl_printer:openprinter')
-                    end,
-                },
-            },
-            distance = 2
-        })
-    elseif GetResourceState('qtarget') == 'started' or GetResourceState('ox_target') == 'started'then
-        exports.ox_target:addModel(model, {
-            {
-                name = 'printer_interaction',
-                label = Locale("prints"),
-                icon = 'fa-solid fa-print',
-                onSelect = function(data)
-                    TriggerEvent('pl_printer:openprinter')
-                end,
-                distance = 2,
-            }
-        })
-    end
+    exports.pl_lib:AddModelTarget(model, {
+        {
+            name     = 'printer_interaction',
+            icon     = 'fa-solid fa-print',
+            label    = Locale('prints'),
+            event    = 'pl_printer:openprinter',
+            distance = 2.0,
+        }
+    })
 end
 
 
 local function spawnObject(object, coords, heading)
-    lib.requestModel(object)
-
-    if not HasModelLoaded(object) then
-        _debug('[DEBUG] '..object..' failed to load.'..'')
+    if not exports.pl_lib:EnsureModel(object) then
+        _debug('[DEBUG] ' .. tostring(object) .. ' failed to load.')
         return
     end
     local entity = CreateObject(object, coords.x, coords.y, coords.z, true, true, true)
@@ -144,7 +96,7 @@ local function spawnObject(object, coords, heading)
         FreezeEntityPosition(entity, true)
         table.insert(spawnedObjects, entity)
     else
-        _debug('[DEBUG] '..' Failed to spawn object: '..object..'')
+        _debug('[DEBUG] Failed to spawn object: ' .. tostring(object))
     end
 end
 
@@ -178,6 +130,9 @@ function onPlayerLoaded()
         spawnObject(location.object, location.coords, location.heading)
     end
 end
+
+AddEventHandler('esx:playerLoaded', function() onPlayerLoaded() end)
+AddEventHandler('QBCore:Client:OnPlayerLoaded', function() onPlayerLoaded() end)
 
 function _debug(...)
     if Config.Debug then

@@ -8,8 +8,8 @@
 - Support ESX, QBCore, QBox Frameworks
 - Print Any Document You Want
 - Spawns Printer at any location
-- Supports qb-inventory, ox_inventory, tgiann-inventory
-- qb-target, qtarget, ox_target
+- Supports multiple inventories
+- Supports multiple Targets
 - Deduct Money For Prints
 
 ######
@@ -23,8 +23,9 @@ Only Fivemanage Links will work cause others are blocked by FiveM
 ######
 
 ## Dependencies
-- [ox_lib](https://github.com/overextended/ox_lib/releases)
-- [qtarget](https://github.com/overextended/qtarget.git), [ox_target](https://github.com/overextended/ox_target/releases), [qb-target](https://github.com/qbcore-framework/qb-target)
+- [pl_lib](https://github.com/pulsepk/pl_lib) — shared framework bridge (includes notify, input dialog, target, and money abstractions; brings ox_lib along as its own dependency)
+- [ox_lib](https://github.com/overextended/ox_lib/releases) — pulled in automatically by pl_lib
+- [qtarget](https://github.com/overextended/qtarget.git), [ox_target](https://github.com/overextended/ox_target/releases), [qb-target](https://github.com/qbcore-framework/qb-target) — at least one target resource required
 ##
 
 ## Installation Guide
